@@ -164,7 +164,7 @@ function App() {
         <p>1. Voer elke barcode op een nieuwe regel in met het formaat:</p>
         <p><code>barcode;titel</code></p>
         <p>2. Bijvoorbeeld:</p>
-        <p><code>5051644057924;ROBLOX 10 BEL - GIFTCARD</code></p>
+        <p><code>5051644057924;Name product</code></p>
         <p>3. Klik op "Genereer Barcodes" om een ZIP-bestand te downloaden met alle barcodes.</p>
       </Instructions>
 
