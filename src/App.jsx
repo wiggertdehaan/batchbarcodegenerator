@@ -118,6 +118,7 @@ function App() {
   const [error, setError] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [results, setResults] = useState([]);
+  const [sessionId] = useState(() => crypto.randomUUID());
 
   const copyToClipboard = async (text) => {
     try {
@@ -156,10 +157,23 @@ function App() {
         throw new Error('Azure Storage configuratie ontbreekt. Neem contact op met de beheerder.');
       }
 
+      console.log('Connecting to Azure Storage:', `https://${storageAccountName}.blob.core.windows.net`);
+      
       const blobServiceClient = new BlobServiceClient(
         `https://${storageAccountName}.blob.core.windows.net${sasToken}`
       );
+
+      console.log('Getting container client for:', containerName);
       const containerClient = blobServiceClient.getContainerClient(containerName);
+
+      // Test de connectie
+      try {
+        await containerClient.getProperties();
+        console.log('Successfully connected to container');
+      } catch (error) {
+        console.error('Error connecting to container:', error);
+        throw new Error(`Kan geen verbinding maken met Azure Storage: ${error.message}`);
+      }
 
       for (const line of lines) {
         if (!line.trim()) continue;
@@ -174,6 +188,8 @@ function App() {
         // Maak een canvas element voor de barcode
         const canvas = document.createElement('canvas');
         try {
+          console.log(`Generating barcode for: ${code}`);
+          
           JsBarcode(canvas, code, {
             format: "EAN13",
             width: 3,
@@ -213,51 +229,66 @@ function App() {
           ctx.font = '16px Arial';
           ctx.fillText(code, finalCanvas.width / 2, 200);
 
+          console.log(`Converting canvas to blob for: ${code}`);
           // Converteer naar PNG blob
           const blob = await new Promise(resolve => finalCanvas.toBlob(resolve, 'image/png'));
           
-          // Upload naar Azure Blob Storage
-          const blobName = `${code}.png`;
+          console.log(`Uploading blob to Azure Storage: ${code}`);
+          // Upload naar Azure Blob Storage met sessie subdirectory
+          const blobName = `${sessionId}/${code}.png`;
           const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-          await blockBlobClient.uploadData(blob, {
-            blobHTTPHeaders: { blobContentType: 'image/png' }
-          });
+          
+          try {
+            await blockBlobClient.uploadData(blob, {
+              blobHTTPHeaders: { blobContentType: 'image/png' }
+            });
+            console.log(`Successfully uploaded: ${code}`);
+          } catch (uploadError) {
+            console.error('Upload error:', uploadError);
+            throw new Error(`Fout bij uploaden naar Azure Storage: ${uploadError.message}`);
+          }
 
-          // Voeg toe aan resultaten
-          const blobUrl = blockBlobClient.url;
+          // Voeg toe aan resultaten met publieke URL zonder SAS token
+          const publicUrl = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blobName}`;
+          console.log(`Generated URL: ${publicUrl}`);
+          
           generatedResults.push({
             code,
             title: title || code,
-            url: blobUrl
+            url: publicUrl
           });
 
           // Voeg ook toe aan ZIP bestand
           barcodes.push({
             blob,
-            filename: blobName
+            filename: `${code}.png` // In ZIP zonder subdirectory voor betere leesbaarheid
           });
 
         } catch (error) {
+          console.error(`Error details for ${code}:`, error);
           throw new Error(`Fout bij het genereren van barcode voor ${code}: ${error.message}`);
         }
       }
 
       // Download als ZIP bestand
       if (barcodes.length > 0) {
+        console.log('Generating ZIP file');
         const zip = new JSZip();
         barcodes.forEach(({blob, filename}) => {
           zip.file(filename, blob);
         });
         
         const zipBlob = await zip.generateAsync({type: 'blob'});
-        FileSaver.saveAs(zipBlob, 'barcodes.zip');
+        FileSaver.saveAs(zipBlob, `barcodes-${sessionId}.zip`);
+        console.log('ZIP file generated and downloaded');
       }
 
       // Update resultaten
       setResults(generatedResults);
+      console.log('Process completed successfully');
 
     } catch (err) {
-      console.error('Fout:', err);
+      console.error('Process failed:', err);
       setError(err.message);
     } finally {
       setIsGenerating(false);
