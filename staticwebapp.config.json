@@ -5,5 +5,10 @@
   },
   "mimeTypes": {
     ".json": "text/json"
+  },
+  "buildProperties": {
+    "outputLocation": "dist",
+    "appLocation": "/",
+    "apiLocation": ""
   }
 } 
