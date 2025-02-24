@@ -157,7 +157,7 @@ function App() {
 
   return (
     <Container>
-      <Title>Barcode Generator</Title>
+      <Title>Batch Barcode Generator</Title>
       
       <Instructions>
         <h3>Instructies:</h3>
