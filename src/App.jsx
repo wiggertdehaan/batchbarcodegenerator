@@ -308,6 +308,15 @@ function App() {
         <p>3. Klik op "Genereer Barcodes" om de barcodes te genereren en op te slaan.</p>
       </Instructions>
 
+      <div className="api-info">
+        <h2>Real-time API</h2>
+        <p>
+          Je kunt ook direct barcodes genereren via de URL: <br />
+          <code>{window.location.origin}/realtime/5051644057924.png</code> <br />
+          Vervang het nummer door elke geldige EAN13 barcode.
+        </p>
+      </div>
+      
       <TextArea
         value={input}
         onChange={(e) => setInput(e.target.value)}

@@ -62,3 +62,26 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.api-info {
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #1976D2;
+}
+
+.api-info h2 {
+  margin-top: 0;
+  color: #1976D2;
+  font-size: 1.4rem;
+}
+
+.api-info code {
+  display: inline-block;
+  background-color: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin: 5px 0;
+  font-family: 'Courier New', monospace;
+}
